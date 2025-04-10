@@ -65,4 +65,3 @@ To build a GraalVM image using Micronaut add the following to the *build.gradle*
 ```groovy
 
 ```
-
