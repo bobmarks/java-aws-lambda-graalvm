@@ -25,7 +25,7 @@ With details
 * **Function Name** - `hello-java21`
 * **Runtime** - `Java21`
 * **Handler** - `lambda.test.HelloLambdaHandler`
-* **Architecture** - `x86_64`
+* **Architecture** - `arm64`
 
 Now upload the `build/distributions/java-aws-lambda-graalvm.zip` and set your Event JSON as:
 
@@ -60,42 +60,53 @@ Click test a few more times and duration should go to something small like `1.50
 
 ## Building GraalVM image
 
-To build a GraalVM image using Micronaut add the following to the *build.gradle* file:
+To build a GraalVM image run:
 
-```groovy
-application {
-    mainClass.set('com.amazonaws.services.lambda.runtime.api.client.AWSLambda')
-}
-
-graalvmNative {
-    binaries {
-        main {
-            imageName = "native"
-            verbose = true
-            fallback = false
-        }
-    }
-}
-
-// Build ZIP file which includes the `bootstrap` script (required for AWS Lambdas) and `native` GraalVM executable
-task buildNativeLambda(type: Zip) {
-    archiveBaseName = rootProject.name + "-native"
-    from(files('build/native/nativeCompile/native'))
-    from(files('build/resources/main/bootstrap'))
-}
-
-buildNativeLambda.dependsOn nativeCompile
+```shell
+./build-native.sh
 ```
+
+This creates a Zip file containing the Lambda - `build/distributions/java-aws-lambda-graalvm-native.zip`.
+
+This can be uploaded via:
+
+* _AWS -> Functions -> Create function_
+
+With details
+
+* **Function Name** - `hello-native`
+* **Runtime** - `Amazon Linux 2023`
+* **Architecture** - `arm64`
+
+Now upload the `build/distributions/java-aws-lambda-graalvm-native.zip` file and set your Event JSON as:
+
+```json
+{
+  "pathParameters": {
+    "name": "Native"
+  }
+}
+```
+
+with stats like
+
+* **Init duration** - `272.24 ms`
+* **Duration** - `7.73. ms`
+
+Click test a few more times and duration should go to something small like `1.27 ms`.
+
+As you can see, the **Init duration** is much faster!
 
 ## GraalVM Reflect Files (using SAM CLI)
 
-Note, the reflection files were created using the [SAM CLI](https://github.com/aws/aws-sam-cli) tool:
+Note, the reflection files (`reflect-config.json`) were created using the [SAM CLI](https://github.com/aws/aws-sam-cli) 
+tool:
 
 ```shell
 sam init
 ```
 
-Then selecting the follow when it runs:
+Then selecting the follow options:
 
 ```
 
@@ -143,4 +154,5 @@ Dependency manager: 1
 Select `n` for the remaining options and copy the entire `META-INF` from the `src/main/resources` from the generated
 application into the `src/main/resources` here.
 
-Finally, edit the `META-INF/native-image/helloworld/reflect-config.json` file to align with `HelloLambdaHandler`.
+Finally, edit the `META-INF/native-image/helloworld/reflect-config.json` file to align with `HelloLambdaHandler` class.
+
