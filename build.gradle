@@ -45,8 +45,6 @@ task buildZip(type: Zip) {
 
 // GraalVM
 
-// graalvmNative
-
 application {
     mainClass.set('com.amazonaws.services.lambda.runtime.api.client.AWSLambda')
 }
