@@ -1,0 +1,71 @@
+plugins {
+    id("io.freefair.lombok") version "8.13.1"
+    id("java")
+    id("application")
+    id("org.graalvm.buildtools.native") version "0.10.6"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation "com.amazonaws:aws-lambda-java-core:1.2.2"
+    implementation "com.amazonaws:aws-lambda-java-events:3.11.0"
+    implementation "com.amazonaws:aws-lambda-java-runtime-interface-client:2.3.0"
+
+    implementation "org.slf4j:slf4j-api:1.8.0-beta2"
+    runtimeOnly "org.jlib:jlib-awslambda-logback:1.0.0"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.1.1"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.1.1"
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Custom 'buildZip' task so we can upload Lambda
+
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources
+    into ('lib') {
+        from configurations.runtimeClasspath
+    }
+}
+
+// GraalVM
+
+// graalvmNative
+
+application {
+    mainClass.set('com.amazonaws.services.lambda.runtime.api.client.AWSLambda')
+}
+
+graalvmNative {
+    binaries {
+        main {
+            imageName = "native"
+            verbose = true
+            fallback = false
+        }
+    }
+}
+
+// Build ZIP file which includes the `bootstrap` script (required for AWS Lambdas) and `native` GraalVM executable
+task buildNativeLambda(type: Zip) {
+    archiveBaseName = rootProject.name + "-native"
+    from(files('build/native/nativeCompile/native'))
+    from(files('build/resources/main/bootstrap'))
+}
+
+buildNativeLambda.dependsOn nativeCompile
